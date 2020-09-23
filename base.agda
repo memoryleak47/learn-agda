@@ -1,5 +1,9 @@
 module base where
 
+open import Agda.Builtin.Bool public
+open import Agda.Builtin.String public
+
+
 data Nat : Set where
   zero : Nat
   succ : Nat -> Nat
@@ -33,6 +37,6 @@ data List (A : Set) : Set where
 
 infixr 40 _::_
 
-map : (A B : Set) -> (f : A -> B) -> List A -> List B
-map A B f [] = []
-map A B f (x :: xs) = (f x) :: (map A B f xs)
+map : {A B : Set} -> (f : A -> B) -> List A -> List B
+map f [] = []
+map f (x :: xs) = (f x) :: (map f xs)

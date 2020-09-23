@@ -1,4 +1,3 @@
-open import Agda.Builtin.String
 open import base
 
 module logic where
@@ -64,19 +63,32 @@ nnf (¬ (x :: y)) = x ¬:: y
 nnf (¬ (v ⋀ x)) = v ⋁ (nnf (¬ x))
 nnf (¬ (v ⋁ x)) = v ⋀ (nnf (¬ x))
 
+{-# TERMINATING #-}
+subst-term : Term -> VarSym -> Term -> Term
+subst-term (var (:VarSym x)) (:VarSym s) t with primStringEquality x s
+... | true = t
+... | false = var (:VarSym x)
+subst-term (func fname l) s t = (func fname (map (λ x -> subst-term x s t) l))
+
 subst : FormulaNNF -> VarSym -> Term -> FormulaNNF
-subst = ?
+subst (f ∧ f₁) s t = subst f s t ∧ subst f₁ s t
+subst (f ∨ f₁) s t = subst f s t ∨ subst f₁ s t
+subst (P :: l) s t = P :: map (λ x -> subst-term x s t) l
+subst (P ¬:: l) s t = P ¬:: map (λ x -> subst-term x s t) l
+subst (x ⋀ f) s t = (x ⋀ subst f s t) -- TODO naming collisions
+subst (x ⋁ f) s t = (x ⋁ subst f s t) -- TODO naming collisions
 
 vartofn : VarSym -> FnSym
 vartofn (:VarSym x) = :FnSym x -- TODO may have naming collisions
 
+{-# TERMINATING #-}
 skolemize-impl : List VarSym -> FormulaNNF -> FormulaSkol
 skolemize-impl l (x ∧ y) = skolemize-impl l x ∧ skolemize-impl l y
 skolemize-impl l (x ∨ y) = skolemize-impl l x ∨ skolemize-impl l y
 skolemize-impl l (x :: y) = x :: y
 skolemize-impl l (x ¬:: y) = x ¬:: y
 skolemize-impl l (x ⋀ y) = skolemize-impl (x :: l) y
-skolemize-impl l (x ⋁ y) = skolemize-impl l (subst y x (func (vartofn x) (map VarSym Term var l)))
+skolemize-impl l (x ⋁ y) = skolemize-impl l (subst y x (func (vartofn x) (map var l)))
 
 skolemize : FormulaNNF -> FormulaSkol
 skolemize a = skolemize-impl [] a
