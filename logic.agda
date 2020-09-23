@@ -63,3 +63,20 @@ nnf (¬ (¬ x)) = nnf x
 nnf (¬ (x :: y)) = x ¬:: y
 nnf (¬ (v ⋀ x)) = v ⋁ (nnf (¬ x))
 nnf (¬ (v ⋁ x)) = v ⋀ (nnf (¬ x))
+
+subst : FormulaNNF -> VarSym -> Term -> FormulaNNF
+subst = ?
+
+vartofn : VarSym -> FnSym
+vartofn (:VarSym x) = :FnSym x -- TODO may have naming collisions
+
+skolemize-impl : List VarSym -> FormulaNNF -> FormulaSkol
+skolemize-impl l (x ∧ y) = skolemize-impl l x ∧ skolemize-impl l y
+skolemize-impl l (x ∨ y) = skolemize-impl l x ∨ skolemize-impl l y
+skolemize-impl l (x :: y) = x :: y
+skolemize-impl l (x ¬:: y) = x ¬:: y
+skolemize-impl l (x ⋀ y) = skolemize-impl (x :: l) y
+skolemize-impl l (x ⋁ y) = skolemize-impl l (subst y x (func (vartofn x) (map VarSym Term var l)))
+
+skolemize : FormulaNNF -> FormulaSkol
+skolemize a = skolemize-impl [] a

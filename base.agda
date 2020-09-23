@@ -32,3 +32,7 @@ data List (A : Set) : Set where
   _::_ : (a : A) -> List A -> List A
 
 infixr 40 _::_
+
+map : (A B : Set) -> (f : A -> B) -> List A -> List B
+map A B f [] = []
+map A B f (x :: xs) = (f x) :: (map A B f xs)
