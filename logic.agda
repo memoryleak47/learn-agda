@@ -20,16 +20,16 @@ data Formula : Set where
   _∨_ : Formula -> Formula -> Formula
   ¬_ : Formula -> Formula
   _::_ : RelSym -> List Term -> Formula
-  _⋀_ : VarSym -> Formula -> Formula
-  _⋁_ : VarSym -> Formula -> Formula
+  ∀' : VarSym -> Formula -> Formula
+  ∃' : VarSym -> Formula -> Formula
 
 data FormulaNNF : Set where
   _∧_ : FormulaNNF -> FormulaNNF -> FormulaNNF
   _∨_ : FormulaNNF -> FormulaNNF -> FormulaNNF
   _::_ : RelSym -> List Term -> FormulaNNF
   _¬::_ : RelSym -> List Term -> FormulaNNF
-  _⋀_ : VarSym -> FormulaNNF -> FormulaNNF
-  _⋁_ : VarSym -> FormulaNNF -> FormulaNNF
+  ∀' : VarSym -> FormulaNNF -> FormulaNNF
+  ∃' : VarSym -> FormulaNNF -> FormulaNNF
 
 
 data Atom : Set where
@@ -51,14 +51,14 @@ nnf : Formula -> FormulaNNF
 nnf (x ∧ y) = nnf x ∧ nnf y
 nnf (x ∨ y) = nnf x ∨ nnf y
 nnf (x :: y) = x :: y
-nnf (v ⋀ x) = v ⋀ nnf x
-nnf (v ⋁ x) = v ⋁ nnf x
+nnf (∀' v x) = ∀' v (nnf x)
+nnf (∃' v x) = ∃' v (nnf x)
 nnf (¬ (x ∧ y)) = (nnf (¬ x)) ∨ (nnf (¬ y))
 nnf (¬ (x ∨ y)) = (nnf (¬ x)) ∧ (nnf (¬ y))
 nnf (¬ (¬ x)) = nnf x
 nnf (¬ (x :: y)) = x ¬:: y
-nnf (¬ (v ⋀ x)) = v ⋁ (nnf (¬ x))
-nnf (¬ (v ⋁ x)) = v ⋀ (nnf (¬ x))
+nnf (¬ (∀' v x)) = ∃' v (nnf (¬ x))
+nnf (¬ (∃' v x)) = ∀' v (nnf (¬ x))
 
 subst-term : Term -> VarSym -> Term -> Term
 subst-term-map : List Term -> VarSym -> Term -> List Term
@@ -76,8 +76,8 @@ subst (f ∧ f₁) s t = subst f s t ∧ subst f₁ s t
 subst (f ∨ f₁) s t = subst f s t ∨ subst f₁ s t
 subst (P :: l) s t = P :: map (λ x -> subst-term x s t) l
 subst (P ¬:: l) s t = P ¬:: map (λ x -> subst-term x s t) l
-subst (x ⋀ f) s t = (x ⋀ subst f s t) -- TODO naming collisions
-subst (x ⋁ f) s t = (x ⋁ subst f s t) -- TODO naming collisions
+subst (∀' x f) s t = (∀' x (subst f s t)) -- TODO naming collisions
+subst (∃' x f) s t = (∃' x (subst f s t)) -- TODO naming collisions
 
 vartofn : VarSym -> FnSym
 vartofn (:VarSym x) = :FnSym x -- TODO may have naming collisions
@@ -88,24 +88,24 @@ qc (x ∧ x₁) = qc x + qc x₁
 qc (x ∨ x₁) = qc x + qc x₁
 qc (x :: x₁) = zero
 qc (x ¬:: x₁) = zero
-qc (x ⋀ x₁) = succ (qc x₁)
-qc (x ⋁ x₁) = succ (qc x₁)
+qc (∀' x x₁) = succ (qc x₁)
+qc (∃' x x₁) = succ (qc x₁)
 
 subst-qc-invar : (f : FormulaNNF) -> (v : VarSym) -> (t : Term) -> qc (subst f v t) == qc f
 subst-qc-invar (f ∧ f₁) v t = cong2 _+_ {qc (subst f v t)} {qc f} {qc (subst f₁ v t)} {qc f₁} (subst-qc-invar f v t) (subst-qc-invar f₁ v t)
 subst-qc-invar (f ∨ f₁) v t = cong2 _+_ {qc (subst f v t)} {qc f} {qc (subst f₁ v t)} {qc f₁} (subst-qc-invar f v t) (subst-qc-invar f₁ v t)
 subst-qc-invar (x :: x₁) v t = refl
 subst-qc-invar (x ¬:: x₁) v t = refl
-subst-qc-invar (x ⋀ f) v t = cong succ (subst-qc-invar f v t)
-subst-qc-invar (x ⋁ f) v t = cong succ (subst-qc-invar f v t)
+subst-qc-invar (∀' x f) v t = cong succ (subst-qc-invar f v t)
+subst-qc-invar (∃' x f) v t = cong succ (subst-qc-invar f v t)
 
 skolemize-impl : List VarSym -> (f : FormulaNNF) -> (c : Nat) -> qc f ≤ c -> FormulaSkol
 skolemize-impl l (x ∧ y) c p = skolemize-impl l x c (trans {qc x} {qc (x ∧ y)} {c} add≤ p) ∧ skolemize-impl l y c (trans {qc y} {qc (x ∧ y)} {c} add≤2 p)
 skolemize-impl l (x ∨ y) c p = skolemize-impl l x c (trans {qc x} {qc (x ∧ y)} {c} add≤ p) ∧ skolemize-impl l y c (trans {qc y} {qc (x ∧ y)} {c} add≤2 p)
 skolemize-impl l (x :: y) _ _ = η (Pos (x :: y))
 skolemize-impl l (x ¬:: y) _ _ = η (Neg (x :: y))
-skolemize-impl l (v ⋀ y) (succ c) p = {!!} -- skolemize-impl (v :: l) y c refl
-skolemize-impl l (v ⋁ y) (succ c) p = {!!} -- skolemize-impl l (subst y v (func (vartofn v) (map var l))) c (subst-qc-invar y v _)
+skolemize-impl l (∀' v y) (succ c) p = {!!} -- skolemize-impl (v :: l) y c refl
+skolemize-impl l (∃' v y) (succ c) p = {!!} -- skolemize-impl l (subst y v (func (vartofn v) (map var l))) c (subst-qc-invar y v _)
 
 {-
 skolemize-impl l (v ⋀ y) = skolemize-impl (v :: l) y
