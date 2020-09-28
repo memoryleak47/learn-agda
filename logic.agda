@@ -109,15 +109,9 @@ skolemize-impl l (∃' v y) (succ c) p = let t = (func (vartofn v) (map var l))
                                            q = (subst-qc-invar y v t)
                                        in skolemize-impl l (subst y v t) c (trans (=→≤ q) (cong-pred p))
 
-{-
-skolemize-impl l (v ⋀ y) = skolemize-impl (v :: l) y
-skolemize-impl l (v ⋁ y) = skolemize-impl l (subst y v (func (vartofn v) (map var l)))
--}
 
--- skolemize : FormulaNNF -> FormulaSkol
--- skolemize a = skolemize-impl [] a
-
-{-
+skolemize : FormulaNNF -> FormulaSkol
+skolemize f = skolemize-impl [] f (qc f) (refl (qc f))
 
 clauselize-helper2 : Clause -> ClauseSet -> ClauseSet
 clauselize-helper2 x [] = []
@@ -131,5 +125,3 @@ clauselize : FormulaSkol -> ClauseSet
 clauselize (f ∧ f₁) = clauselize f ∪ clauselize f₁
 clauselize (η x)  = (x :: []) :: []
 clauselize (f ∨ f₁) = clauselize-helper (clauselize f) (clauselize f₁)
-
--}
