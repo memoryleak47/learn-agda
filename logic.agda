@@ -31,24 +31,21 @@ data FormulaNNF : Set where
   _⋀_ : VarSym -> FormulaNNF -> FormulaNNF
   _⋁_ : VarSym -> FormulaNNF -> FormulaNNF
 
-data FormulaSkol : Set where
-  _∧_ : FormulaSkol -> FormulaSkol -> FormulaSkol
-  _∨_ : FormulaSkol -> FormulaSkol -> FormulaSkol
-  _::_ : RelSym -> List Term -> FormulaSkol
-  _¬::_ : RelSym -> List Term -> FormulaSkol
 
 data Atom : Set where
-  :Atom : RelSym -> List Term -> Atom
+  _::_ : RelSym -> List Term -> Atom
 
 data Literal : Set where
   Pos : Atom -> Literal
   Neg : Atom -> Literal
 
-data Clause : Set where
-  :Clause : List Literal -> Clause
+data FormulaSkol : Set where
+  _∧_ : FormulaSkol -> FormulaSkol -> FormulaSkol
+  _∨_ : FormulaSkol -> FormulaSkol -> FormulaSkol
+  η : Literal -> FormulaSkol
 
-data ClauseSet : Set where
-  :ClauseSet : List Clause -> ClauseSet
+Clause = List Literal
+ClauseSet = List Clause
 
 nnf : Formula -> FormulaNNF
 nnf (x ∧ y) = nnf x ∧ nnf y
@@ -85,10 +82,24 @@ vartofn (:VarSym x) = :FnSym x -- TODO may have naming collisions
 skolemize-impl : List VarSym -> FormulaNNF -> FormulaSkol
 skolemize-impl l (x ∧ y) = skolemize-impl l x ∧ skolemize-impl l y
 skolemize-impl l (x ∨ y) = skolemize-impl l x ∨ skolemize-impl l y
-skolemize-impl l (x :: y) = x :: y
-skolemize-impl l (x ¬:: y) = x ¬:: y
+skolemize-impl l (x :: y) = η (Pos (x :: y))
+skolemize-impl l (x ¬:: y) = η (Neg (x :: y))
 skolemize-impl l (x ⋀ y) = skolemize-impl (x :: l) y
 skolemize-impl l (x ⋁ y) = skolemize-impl l (subst y x (func (vartofn x) (map var l)))
 
 skolemize : FormulaNNF -> FormulaSkol
 skolemize a = skolemize-impl [] a
+
+
+clauselize-helper2 : Clause -> ClauseSet -> ClauseSet
+clauselize-helper2 x [] = []
+clauselize-helper2 x (a :: y) = (x ∪ a) :: clauselize-helper2 x y
+
+clauselize-helper : ClauseSet -> ClauseSet -> ClauseSet
+clauselize-helper [] C₂ = C₂
+clauselize-helper (x :: xs) C₂ = clauselize-helper2 x C₂ ∪ clauselize-helper xs C₂
+
+clauselize : FormulaSkol -> ClauseSet
+clauselize (f ∧ f₁) = clauselize f ∪ clauselize f₁
+clauselize (η x)  = (x :: []) :: []
+clauselize (f ∨ f₁) = clauselize-helper (clauselize f) (clauselize f₁)

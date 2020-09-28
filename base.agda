@@ -40,3 +40,9 @@ infixr 40 _::_
 map : {A B : Set} -> (f : A -> B) -> List A -> List B
 map f [] = []
 map f (x :: xs) = (f x) :: (map f xs)
+
+union : {A : Set} -> List A -> List A -> List A
+union [] b = b
+union (x :: xs) b = x :: union xs b
+_∪_ = union
+infixl 50 _∪_

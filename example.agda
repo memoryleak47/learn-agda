@@ -19,6 +19,9 @@ a = ¬(P :: (v1 :: []) ∧ P :: (v1 :: v2 :: []))
 a2 : Formula
 a2 = ¬((:VarSym "v1") ⋁ ((:VarSym "v2") ⋀ (¬(P :: (v1 :: v2 :: [])))))
 
-res : FormulaSkol
-res = skolemize(nnf a2)
+res : ClauseSet
+res = clauselize ( skolemize (nnf a2))
+
+
+
 
