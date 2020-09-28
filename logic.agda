@@ -104,8 +104,10 @@ skolemize-impl l (x ∧ y) c p = skolemize-impl l x c (trans {qc x} {qc (x ∧ y
 skolemize-impl l (x ∨ y) c p = skolemize-impl l x c (trans {qc x} {qc (x ∧ y)} {c} add≤ p) ∧ skolemize-impl l y c (trans {qc y} {qc (x ∧ y)} {c} add≤2 p)
 skolemize-impl l (x :: y) _ _ = η (Pos (x :: y))
 skolemize-impl l (x ¬:: y) _ _ = η (Neg (x :: y))
-skolemize-impl l (∀' v y) (succ c) p = {!!} -- skolemize-impl (v :: l) y c refl
-skolemize-impl l (∃' v y) (succ c) p = {!!} -- skolemize-impl l (subst y v (func (vartofn v) (map var l))) c (subst-qc-invar y v _)
+skolemize-impl l (∀' v y) (succ c) p = skolemize-impl (v :: l) y c (cong-pred p)
+skolemize-impl l (∃' v y) (succ c) p = let t = (func (vartofn v) (map var l))
+                                           q = (subst-qc-invar y v t)
+                                       in skolemize-impl l (subst y v t) c (trans (=→≤ q) (cong-pred p))
 
 {-
 skolemize-impl l (v ⋀ y) = skolemize-impl (v :: l) y

@@ -80,6 +80,10 @@ cong-succ : {a b : Nat} -> a ≤ b -> succ a ≤ succ b
 cong-succ {a} {.a} (refl .a) = refl (succ a)
 cong-succ {a} {.(succ y)} (succ .a y p) = succ _ _ (cong-succ p)
 
+cong-pred : {a b : Nat} -> succ a ≤ succ b -> a ≤ b
+cong-pred (refl .(succ _)) = refl _
+cong-pred {a} {b} (succ .(succ _) _ p) = trans {a} {succ a} {b} (succ _ _ (refl a)) p
+
 add≤ : {x y : Nat} -> x ≤ x + y
 add≤ {zero} {y} = zero≤∀ y
 add≤ {succ x} {y} = cong-succ (add≤ {x} {y})
