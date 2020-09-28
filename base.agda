@@ -46,3 +46,13 @@ union [] b = b
 union (x :: xs) b = x :: union xs b
 _∪_ = union
 infixl 50 _∪_
+
+
+max2 : Nat -> Nat -> Nat
+max2 zero y = y
+max2 x zero = x
+max2 (succ x) (succ y) = succ (max2 x y)
+
+max : List Nat -> Nat
+max [] = zero
+max (a :: x) = max2 a (max x)

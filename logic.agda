@@ -60,12 +60,16 @@ nnf (¬ (x :: y)) = x ¬:: y
 nnf (¬ (v ⋀ x)) = v ⋁ (nnf (¬ x))
 nnf (¬ (v ⋁ x)) = v ⋀ (nnf (¬ x))
 
-{-# TERMINATING #-}
 subst-term : Term -> VarSym -> Term -> Term
+subst-term-map : List Term -> VarSym -> Term -> List Term
+subst-term-map [] s t = []
+subst-term-map (a :: l) s t = subst-term a s t :: subst-term-map l s t
+
 subst-term (var (:VarSym x)) (:VarSym s) t with primStringEquality x s
 ... | true = t
 ... | false = var (:VarSym x)
-subst-term (func fname l) s t = (func fname (map (λ x -> subst-term x s t) l))
+subst-term (func fname l) s t = (func fname (subst-term-map l s t))
+
 
 subst : FormulaNNF -> VarSym -> Term -> FormulaNNF
 subst (f ∧ f₁) s t = subst f s t ∧ subst f₁ s t
