@@ -82,18 +82,40 @@ subst (x ⋁ f) s t = (x ⋁ subst f s t) -- TODO naming collisions
 vartofn : VarSym -> FnSym
 vartofn (:VarSym x) = :FnSym x -- TODO may have naming collisions
 
-{-# TERMINATING #-}
-skolemize-impl : List VarSym -> FormulaNNF -> FormulaSkol
-skolemize-impl l (x ∧ y) = skolemize-impl l x ∧ skolemize-impl l y
-skolemize-impl l (x ∨ y) = skolemize-impl l x ∨ skolemize-impl l y
-skolemize-impl l (x :: y) = η (Pos (x :: y))
-skolemize-impl l (x ¬:: y) = η (Neg (x :: y))
-skolemize-impl l (x ⋀ y) = skolemize-impl (x :: l) y
-skolemize-impl l (x ⋁ y) = skolemize-impl l (subst y x (func (vartofn x) (map var l)))
 
-skolemize : FormulaNNF -> FormulaSkol
-skolemize a = skolemize-impl [] a
+qc : FormulaNNF -> Nat
+qc (x ∧ x₁) = qc x + qc x₁
+qc (x ∨ x₁) = qc x + qc x₁
+qc (x :: x₁) = zero
+qc (x ¬:: x₁) = zero
+qc (x ⋀ x₁) = succ (qc x₁)
+qc (x ⋁ x₁) = succ (qc x₁)
 
+subst-qc-invar : (f : FormulaNNF) -> (v : VarSym) -> (t : Term) -> qc (subst f v t) == qc f
+subst-qc-invar (f ∧ f₁) v t = cong2 _+_ {qc (subst f v t)} {qc f} {qc (subst f₁ v t)} {qc f₁} (subst-qc-invar f v t) (subst-qc-invar f₁ v t)
+subst-qc-invar (f ∨ f₁) v t = cong2 _+_ {qc (subst f v t)} {qc f} {qc (subst f₁ v t)} {qc f₁} (subst-qc-invar f v t) (subst-qc-invar f₁ v t)
+subst-qc-invar (x :: x₁) v t = refl
+subst-qc-invar (x ¬:: x₁) v t = refl
+subst-qc-invar (x ⋀ f) v t = cong succ (subst-qc-invar f v t)
+subst-qc-invar (x ⋁ f) v t = cong succ (subst-qc-invar f v t)
+
+skolemize-impl : List VarSym -> (f : FormulaNNF) -> (c : Nat) -> qc f ≤ c -> FormulaSkol
+skolemize-impl l (x ∧ y) c p = skolemize-impl l x c (trans {qc x} {qc (x ∧ y)} {c} add≤ p) ∧ skolemize-impl l y c (trans {qc y} {qc (x ∧ y)} {c} add≤2 p)
+skolemize-impl l (x ∨ y) c p = skolemize-impl l x c (trans {qc x} {qc (x ∧ y)} {c} add≤ p) ∧ skolemize-impl l y c (trans {qc y} {qc (x ∧ y)} {c} add≤2 p)
+skolemize-impl l (x :: y) _ _ = η (Pos (x :: y))
+skolemize-impl l (x ¬:: y) _ _ = η (Neg (x :: y))
+skolemize-impl l (v ⋀ y) (succ c) p = {!!} -- skolemize-impl (v :: l) y c refl
+skolemize-impl l (v ⋁ y) (succ c) p = {!!} -- skolemize-impl l (subst y v (func (vartofn v) (map var l))) c (subst-qc-invar y v _)
+
+{-
+skolemize-impl l (v ⋀ y) = skolemize-impl (v :: l) y
+skolemize-impl l (v ⋁ y) = skolemize-impl l (subst y v (func (vartofn v) (map var l)))
+-}
+
+-- skolemize : FormulaNNF -> FormulaSkol
+-- skolemize a = skolemize-impl [] a
+
+{-
 
 clauselize-helper2 : Clause -> ClauseSet -> ClauseSet
 clauselize-helper2 x [] = []
@@ -107,3 +129,5 @@ clauselize : FormulaSkol -> ClauseSet
 clauselize (f ∧ f₁) = clauselize f ∪ clauselize f₁
 clauselize (η x)  = (x :: []) :: []
 clauselize (f ∨ f₁) = clauselize-helper (clauselize f) (clauselize f₁)
+
+-}
