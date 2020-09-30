@@ -30,6 +30,12 @@ record ∑_ {L : Set} (R : L -> Set) : Set where
   field fst : L
   field snd : R fst
 
+record _×_ (L : Set) (R : Set) : Set where
+  constructor _,_
+  field fst : L
+  field snd : R
+infixr 40 _×_ 
+
 record is-bij {A B : Set} (f : A -> B) : Set where
   field is-inj : (a₁ : A) -> (a₂ : A) -> f a₁ == f a₂ -> a₁ == a₂
   field is-surj : (b : B) -> ∑ λ a -> f a == b
@@ -50,4 +56,4 @@ record isomorph-list {A : Set} (l₁ : List A) (l₂ : List A) : Set where
   field vec-iso : isomorph-vec v₁' v₂
 
 is-sorting-properly : {A : Set} -> {O : Ord A} -> (List A -> List A) -> Set
-is-sorting-properly {A} {O} alg = ∀ l -> ∑ (λ l₂ -> (∑ (λ (_ : isomorph-list l l₂) -> sorted {O = O} l₂) ))
+is-sorting-properly {A} {O} alg = ∀ l -> (let l₂ = alg l in (isomorph-list l l₂) × (sorted {O = O} l₂) )
