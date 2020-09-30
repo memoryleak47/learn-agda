@@ -1,9 +1,5 @@
 open import base
 
-data Nat : Set where
-  zero : Nat
-  succ : Nat -> Nat
-
 _≤Nat_ : (x y : Nat) -> bool
 _≤Nat_ zero y = true
 _≤Nat_ (succ x) zero = false
