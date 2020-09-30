@@ -49,4 +49,5 @@ record isomorph-list {A : Set} (l₁ : List A) (l₂ : List A) : Set where
   v₁' = transport (cong (Vector A) cond) v₁
   field vec-iso : isomorph-vec v₁' v₂
 
--- sort : 
+is-sorting-properly : {A : Set} -> {O : Ord A} -> (List A -> List A) -> Set
+is-sorting-properly {A} {O} alg = ∀ l -> ∑ (λ l₂ -> (∑ (λ (_ : isomorph-list l l₂) -> sorted {O = O} l₂) ))
